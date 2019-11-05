@@ -42,18 +42,18 @@ int_handler:
 
         chamadaSyscall:     # Identificando codigo da syscall
                 li t0, 16
-                li t1, 17
-                li t2, 18
-                li t3, 19
-                li t4, 20
-                li t5, 21
-                li t6, 22
                 beq a7, t0, syscall16
+                li t0, 17
                 beq a7, t0, syscall17
+                li t0, 18
                 beq a7, t0, syscall18
+                li t0, 19
                 beq a7, t0, syscall19
+                li t0, 20
                 beq a7, t0, syscall20
+                li t0, 21
                 beq a7, t0, syscall21
+                li t0, 22
                 beq a7, t0, syscall22
                 li t0, 64
                 beq a7, t0, syscall64
@@ -165,7 +165,6 @@ syscall17:  # set_servo_angles
     li a0, -2
     j int_handler_Return
     
-
 syscall18:  # set_engine_torque
     beqz a0, sys18_Eng1
     li t0, 1
