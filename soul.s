@@ -67,9 +67,9 @@ int_handler:
             beq t0, t1, tratarGPT
             j SoRecuperaContexto
 
-        tratarGPT:
+        tratarGPT: #100ms / tratar eco
             # Configurando para o GPT interromper no proximo 1ms 
-            li t0, 1
+            li t0, 100
             li t1, 0xFFFF0100	
             sw t0, 0(t1)
             # Registrar a interrupcao de GPT como ja tratada
@@ -90,7 +90,7 @@ int_handler:
         # Apontar para a instrucao depois daquela que chamou a syscall
         csrr t0, mepc
         addi t0, t0, 4
-        csrs mepc, t0
+        csrw mepc, t0
 
         SoRecuperaContexto:
             # Restaurando contexto
@@ -103,7 +103,7 @@ int_handler:
             lw a7, 24(s0)
             lw t0, 28(s0)
             lw t1, 32(s0)
-            lw t2, 26(s0)
+            lw t2, 36(s0)
             lw t3, 40(s0)
             lw t4, 44(s0)
             lw t5, 48(s0)
@@ -231,9 +231,9 @@ syscall64: # write
 
 _start:
     # Config. GPT para interromper a cada 1ms
-    li t0, 0xFFFF0100	
-    li t1, 1
-    sw t1, 0(t0)
+    # li t0, 0xFFFF0100	
+    # li t1, 100
+    # sw t1, 0(t0)
     # Iniciando motores com valor 0
     li t0, 0xFFFF0018 # motor 1
     li t1, 0xFFFF001A # motor 2
