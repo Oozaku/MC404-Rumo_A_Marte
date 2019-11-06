@@ -146,7 +146,7 @@ void set_time(unsigned int t);
  * Returns:
  *   void
  */
-void puts(const char*);
+void puts(const char* a);
 
 #endif // API_ROBOT_H
 

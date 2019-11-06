@@ -30,7 +30,8 @@ int_handler:
 
         Tratar_excecao:     # Chamada de syscall para valores 8 e 9 e 
                             # para n >= 12 ou n <= 7 necessita parar o programa
-            andi t0, t0, 0x7FFFFFFF
+            li t1, 0x7FFFFFFF
+            and t0, t0, t1
             li t1, 8                    # Syscall pelo modo usuario
             beq t0, t1, chamadaSyscall
             li t1, 9                    # Syscall pelo modo Super
@@ -60,7 +61,8 @@ int_handler:
                 j sairPrograma          # Erro: codigo de syscall desconhecida
     
         tratar_interrupcao:
-            andi t0, t0, 0x7FFFFFFF
+            li t1, 0x7FFFFFFF
+            and t0, t0, t1
             li t1, 3
             beq t0, t1, tratarGPT
             j SoRecuperaContexto
@@ -168,7 +170,7 @@ syscall17:  # set_servo_angles
 syscall18:  # set_engine_torque
     beqz a0, sys18_Eng1
     li t0, 1
-    beq a0, to, sys18_Eng2
+    beq a0, t0, sys18_Eng2
     li a0, -1    #Caso o ID do motor seja inválido
     j int_handler_Return
     #Configura torque do motor 1
@@ -256,7 +258,7 @@ _start:
     ori t1, t1, 0x80
     csrw mstatus, t1
     # Habilita interrupcoes externas
-    csrr, t1, mie
+    csrr t1, mie
     li t2, 0x800
     or t1, t1, t2
     csrw mie, t1

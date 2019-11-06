@@ -3,6 +3,7 @@
   
 #Implementação das rotinas descritas em api_robot.h
 
+.globl set_torque
 set_torque:
   #Verificação dos valores de torque
   li t0, 100
@@ -27,6 +28,7 @@ set_torque:
   st_Return:
   ret
 
+.globl set_engine_torque
 set_engine_torque:
   #Verificação do valor de torque
   li t0, 100
@@ -47,36 +49,43 @@ set_engine_torque:
   sengt_Return:
   ret
 
+.globl set_head_servo
 set_head_servo:
   li a7, 17
   ecall
   ret
 
+.globl get_us_distance
 get_us_distance:
   li a7, 16
   ecall
   ret
 
+.globl get_current_GPS_position
 get_current_GPS_position:
   li a7, 19
   ecall
   ret
 
+.globl get_gyro_angles
 get_gyro_angles:
   li a7, 20
   ecall
   ret
 
+.globl get_time
 get_time:
   li a7, 21
   ecall
   ret
 
+.globl set_time
 set_time:
   li a7, 22
   ecall
   ret
 
+.globl puts
 puts:
   li a2, 0  #Contador de caracteres da string
   mv t0, a0 #Ponteiro para percorrer string
