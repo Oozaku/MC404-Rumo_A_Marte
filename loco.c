@@ -7,8 +7,6 @@ João Alberto Moreira Seródio - RA 218548*/
 
 int main(){
   /* Procurando o melhor caminho */
-  set_time(0);
-  Vector3 p;
-  get_current_GPS_position(&p);
+  set_head_servo(2, 155);
   return 0;
 }

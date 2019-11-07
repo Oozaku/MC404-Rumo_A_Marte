@@ -25,7 +25,7 @@ int_handler:
     sw t6, 52(s0)
     # Descobrindo a causa da interrupcao ou da excecao
     csrr t0, mcause
-    bgt zero, t0, Tratar_excecao
+    bgtz t0, Tratar_excecao
     j tratar_interrupcao
 
         Tratar_excecao:     # Chamada de syscall para valores 8 e 9 e 
@@ -36,10 +36,7 @@ int_handler:
             beq t0, t1, chamadaSyscall
             li t1, 9                    # Syscall pelo modo Super
             beq t0, t1, chamadaSyscall
-            li t1, 7
-            ble t0, t1, sairPrograma 
-            li t1, 12
-            bge t0, t1, sairPrograma 
+            j sairPrograma
 
         chamadaSyscall:     # Identificando codigo da syscall
                 li t0, 16
@@ -127,8 +124,8 @@ syscall17:  # set_servo_angles
     li t0, 1
     beq a0, t0, sys17_Mid
     li t0, 2
-    beq a0, t0, sys17_Mid
-    li a0, -1   #Caso servo ID seja inválido
+    beq a0, t0, sys17_Top
+    li a0, -2   #Caso servo ID seja inválido
     j int_handler_Return
     #Servo ID 0 - Base (16-116)
     sys17_Base:
@@ -153,18 +150,18 @@ syscall17:  # set_servo_angles
     li a0, 0
     j int_handler_Return
     #Servo ID 2 - Top (0-156)
-    sys17_top:
+    sys17_Top:
     #Validação do ângulo
     li t0, 156
     bgt a1, t0, sys17_InvalidAngle
-    bltz a1, sys17_InvalidAngle
+    blez a1, sys17_InvalidAngle
     li t0, 0xFFFF001C  #Ângulo servo-motor 3 (top)
     sb a1, 0(t0)
     li a0, 0
     j int_handler_Return
     #ângulo Inválido
     sys17_InvalidAngle:
-    li a0, -2
+    li a0, -1
     j int_handler_Return
     
 syscall18:  # set_engine_torque
@@ -274,6 +271,8 @@ _start:
     la t0, main
     csrw mepc, t0
 
+    # Setar o sp
+    li sp, 0xFFFFFC
     mret
 
 

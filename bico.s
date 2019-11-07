@@ -53,6 +53,14 @@ set_engine_torque:
 set_head_servo:
   li a7, 17
   ecall
+  beqz a0, shs_Return
+  li t0, -1
+  beq a0, t0, shs_Change
+  li a0, -1
+  j shs_Return
+  shs_Change:
+  li a0, -2
+  shs_Return:
   ret
 
 .globl get_us_distance
