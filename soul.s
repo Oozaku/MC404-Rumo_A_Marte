@@ -224,7 +224,20 @@ syscall22:  # set_time
     j int_handler_Return
 
 syscall64: # write
-
+    li t0, 0xFFFF0108
+    li t1, 0xFFFF0109
+    li t3, 1
+    mv t4, a1   #Apontador para string
+    sys64_While1:
+        bgt t0, a2, int_handler_Return
+        lbu t5, 0(t4)
+        sb t5, 0(t1)
+        addi t4, t4, 1
+        sb t3, 0(t0)
+        sys64_While2:
+            lbu t4, 0(t0)
+            bnez t4, sys64_While2
+        j sys64_While1
 
 _start:
     # Config. GPT para interromper a cada 1ms

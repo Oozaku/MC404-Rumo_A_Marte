@@ -104,6 +104,7 @@ puts:
     addi t0, t0, 1
     j puts_While
   puts_wBreak:
+  addi a2, a2, 1
   mv a1, a0
   li a0, 1
   li a7, 64

@@ -7,6 +7,13 @@ João Alberto Moreira Seródio - RA 218548*/
 
 int main(){
   /* Procurando o melhor caminho */
-  set_head_servo(2, 155);
+  while (1){
+    set_head_servo(0, 17);
+    set_head_servo(1, 90);
+    set_head_servo(2, 155);
+    set_head_servo(0, 100);
+    set_head_servo(1, 60);
+    set_head_servo(2, 155);
+  }
   return 0;
 }
