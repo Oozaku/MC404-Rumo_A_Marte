@@ -65,17 +65,21 @@ int_handler:
             j SoRecuperaContexto
 
         tratarGPT: #100ms / tratar eco
-            # Configurando para o GPT interromper no proximo 1ms 
+            # Se o end. 0xFFFF0104 for zero, trata-se de falsa interrupcao
+            li t0, 0xFFFF0104   
+            lb t1, 0(t0)
+            beq zero, t1, SoRecuperaContexto
+            # Configurando para o GPT interromper no proximo 100ms 
             li t0, 100
             li t1, 0xFFFF0100	
             sw t0, 0(t1)
             # Registrar a interrupcao de GPT como ja tratada
             li t1, 0xFFFF0104
-            sw zero, 0(t1)
-            # Adicionando 1ms no tempoReal
+            sb zero, 0(t1)
+            # Adicionando 100ms no tempoReal
             la t0, tempoReal
             lw t1, 0(t0)
-            addi t1, t1, 1
+            addi t1, t1, 100
             sw t1, 0(t0)
             j SoRecuperaContexto
         
@@ -241,9 +245,9 @@ syscall64: # write
 
 _start:
     # Config. GPT para interromper a cada 1ms
-    # li t0, 0xFFFF0100	
-    # li t1, 100
-    # sw t1, 0(t0)
+    li t0, 0xFFFF0100	
+    li t1, 100
+    sw t1, 0(t0)
     # Iniciando motores com valor 0
     li t0, 0xFFFF0018 # motor 1
     li t1, 0xFFFF001A # motor 2
