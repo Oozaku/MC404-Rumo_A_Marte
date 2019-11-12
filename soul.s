@@ -91,7 +91,8 @@ int_handler:
         # Apontar para a instrucao depois daquela que chamou a syscall
         csrr t0, mepc
         addi t0, t0, 4
-        csrw mepc, t0
+        csrs mepc, t0#VERIFICAR DEPOIS
+        j SoRecuperaContexto
 
         SoRecuperaContexto:
             # Restaurando contexto
@@ -228,20 +229,24 @@ syscall22:  # set_time
     j int_handler_Return
 
 syscall64: # write
+    li a0, 0
     li t0, 0xFFFF0108
     li t1, 0xFFFF0109
     li t3, 1
     mv t4, a1   #Apontador para string
     sys64_While1:
-        bgt t0, a2, int_handler_Return
+        bge a0, a2, int_handler_Return
         lbu t5, 0(t4)
         sb t5, 0(t1)
         addi t4, t4, 1
         sb t3, 0(t0)
         sys64_While2:
-            lbu t4, 0(t0)
-            bnez t4, sys64_While2
+            lbu t6, 0(t0)
+            bnez t6, sys64_While2
+        addi a0, a0, 1
         j sys64_While1
+    j int_handler_Return
+    
 
 _start:
     # Config. GPT para interromper a cada 1ms
@@ -289,9 +294,8 @@ _start:
     csrw mepc, t0
 
     # Setar o sp
-    li sp, 0xFFFFFC
+    li sp, 0x7FFFFFC
     mret
-
 
 reg_buffer:
     .skip 132

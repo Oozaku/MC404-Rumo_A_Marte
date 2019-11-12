@@ -1,5 +1,6 @@
 *.o
 *.x
 settings.json
+loco.s
 
 MC404-RUMO_A_MARTE/
