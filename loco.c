@@ -5,15 +5,25 @@ João Alberto Moreira Seródio - RA 218548*/
 
 #include "api_robot2.h"
 
-void traduz(int numero){
-  int aux = numero;
-  char a[] = "123\n";
-  a[2] = aux % 10 + 48;
-  aux = aux / 10;
-  a[1] = aux % 10 + 48;
-  aux = aux / 10;
-  a[0] = aux + 48;
-  puts(a);
+void intToASCII(int numero, int quebraLinha){
+  char *ascii;
+  ascii[0] = (char) numero%10 + 48;
+  ascii[1] = '\0';
+  if (numero/10 == 0){
+    puts(ascii);
+  } else{
+    intToASCII(numero/10, 0);
+    puts(ascii);
+  }
+  if (quebraLinha)
+    puts('\n');
+}
+
+void wait(unsigned int tempo){
+  unsigned int inicio = get_time();
+  while (get_time() - inicio < tempo){
+    //Nada
+  };
 }
 void vire(int angulo){  
   /* Vira para angulo-graus absoluto do giroscopio */
@@ -27,6 +37,9 @@ void vire(int angulo){
   set_torque(0,0);
 }
 
+void ABS(){
+  
+}
 void ande(int distancia){
   /* Anda distancia em decimetros em linha reta */
   Vector3 atual, inicio;
@@ -52,9 +65,9 @@ void ande(int distancia){
 int main(){
   Vector3 atual;
   get_current_GPS_position(&atual);
-  traduz(atual.x);
-  traduz(atual.y);
-  traduz(atual.z);
+  intToASCII(atual.x, 1);
+  intToASCII(atual.y, 1);
+  intToASCII(atual.z, 1);
   while(1){
   }
   return 0;
