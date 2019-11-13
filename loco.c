@@ -51,13 +51,10 @@ void ande(int distancia){
 
 int main(){
   Vector3 atual;
-  get_gyro_angles(&atual);
-  set_torque(-10,10);
-  while(atual.y != 35){
-    get_gyro_angles(&atual);
-  }
-  set_torque(0,0);
-  set_torque(50,50);
+  get_current_GPS_position(&atual);
+  traduz(atual.x);
+  traduz(atual.y);
+  traduz(atual.z);
   while(1){
   }
   return 0;
