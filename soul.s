@@ -26,7 +26,7 @@ int_handler:
     # Descobrindo a causa da interrupcao ou da excecao
     csrr t0, mcause
     bgtz t0, Tratar_excecao
-    j tratar_interrupcao
+    j tratarGPT
 
         Tratar_excecao:     # Chamada de syscall para valores 8 e 9 e 
                             # para n >= 12 ou n <= 7 necessita parar o programa
@@ -57,12 +57,12 @@ int_handler:
                 beq a7, t0, syscall64
                 j sairPrograma          # Erro: codigo de syscall desconhecida
     
-        tratar_interrupcao:
-            li t1, 0x7FFFFFFF
-            and t0, t0, t1
-            li t1, 3
-            beq t0, t1, tratarGPT
-            j SoRecuperaContexto
+        # tratar_interrupcao:
+        #     li t1, 0x7FFFFFFF
+        #     and t0, t0, t1
+        #     li t1, 3
+        #     beq t0, t1, tratarGPT
+        #     j SoRecuperaContexto
 
         tratarGPT: #100ms / tratar eco
             # Se o end. 0xFFFF0104 for zero, trata-se de falsa interrupcao
@@ -91,7 +91,7 @@ int_handler:
         # Apontar para a instrucao depois daquela que chamou a syscall
         csrr t0, mepc
         addi t0, t0, 4
-        csrs mepc, t0#VERIFICAR DEPOIS
+        csrw mepc, t0#VERIFICAR DEPOIS
         j SoRecuperaContexto
 
         SoRecuperaContexto:

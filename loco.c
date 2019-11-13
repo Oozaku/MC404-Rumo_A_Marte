@@ -50,6 +50,15 @@ void ande(int distancia){
 }
 
 int main(){
-  set_torque(-20,20);
+  Vector3 atual;
+  get_gyro_angles(&atual);
+  set_torque(-10,10);
+  while(atual.y != 35){
+    get_gyro_angles(&atual);
+  }
+  set_torque(0,0);
+  set_torque(50,50);
+  while(1){
+  }
   return 0;
 }
