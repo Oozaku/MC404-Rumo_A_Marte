@@ -23,6 +23,7 @@ void goToFriend(int alvo);
 int verificarInimigos();
 int angulo(Vector3 alvo, Vector3 atual);
 void contornarInimigo();
+void printLocation(Vector3 local);
 
 
 /*Funções utilitárias*/
@@ -125,8 +126,10 @@ int declive(Vector3 atual){
   else inclinacao = inclinacao + atual.x; 
   if (atual.z > 300) inclinacao = inclinacao + 360 - atual.z;
   else inclinacao = inclinacao + atual.z;
-  puts("Declive: ");
-  intToASCII(inclinacao,1);
+  if (get_time() % 500 == 0){
+    puts("Declive: ");
+    intToASCII(inclinacao,1);
+  }
   return inclinacao; 
 }
 
@@ -165,157 +168,75 @@ void parar(){
   set_torque(0,0);
 }
 
+void desvio(int angulo, int tempo){
+  vire(angulo);
+  int aux = tempo / 100 + 1;
+  int i;
+  Vector3 giroscopio;
+  for(i=0;i<aux;i++){
+    get_gyro_angles(&giroscopio);
+    set_torque(15,15);
+    wait(100);
+    int desvioAngular = angulo - giroscopio.y;
+    if (desvioAngular < 0) desvioAngular = - desvioAngular;
+    if (desvioAngular > 60){
+      set_torque(0,0);
+      vire(angulo);
+      set_torque(15,15);
+    }
+  }
+}  
+
 void ande(int distancia, int alvo, int angulo){
   /* Anda distancia em decimetros em linha reta */
   Vector3 atual, inicio;
-  int impulso = 10;
+  int torque = 20;
   get_current_GPS_position(&atual);
   get_current_GPS_position(&inicio);
-  int sinalizador = 1;
-  set_torque(impulso,impulso);
+  set_torque(torque,torque);
   while(distanciaQuadrada(atual,inicio) < quadrado(distancia)){
-    // Vector3 anterior;
-    // get_current_GPS_position(&anterior);
-    // wait(3000);
-    // get_current_GPS_position(&atual);
-    // if (sinalizador == 1 & distanciaQuadrada(anterior,atual) < 20){
-    //   vire(angulo + 90);
-    //   sinalizador = -1;
-    // }
-    // else if (sinalizador == -1 & distanciaQuadrada(anterior, atual) < 20){
-    //   vire(angulo - 90);
-    // }
-    // if (get_time() % 800 == 0){
-    //   Vector3 angulos;
-    //   get_gyro_angles(&angulos);
-    //   puts("Angulo em x: ");
-    //   intToASCII(angulos.x,1);
-    //   puts("Angulo em y: ");
-    //   intToASCII(angulos.y,1);
-    //   puts("Angulo em z: ");
-    //   intToASCII(angulos.z,1);
-    //   puts("-----------------------------------\n");
-    // }
     if (distanciaQuadrada(friends_locations[alvo],atual) <= 2500) break;
-    intToASCII(get_us_distance(), 1);
     Vector3 giroscopio;
     get_gyro_angles(&giroscopio);
     int dAngulo = giroscopio.y - angulo;
     if (dAngulo < 0) dAngulo = - dAngulo;
     if (dAngulo > 90) break;
-    if (declive(giroscopio) > 40){        
+    if (declive(giroscopio) > 30){        
       /* Ve se o Uoli esta tentando escalar morro, se sim, faz desvio */    
+      angulo = getAngulo(alvo);
       puts("...\nDesviando...\n...\n");
-      vire(angulo - 90);
-      set_torque(10,10);
-      wait(2500);
+      desvio(angulo-90,10000);
     }
+    angulo = getAngulo(alvo);
+    int bloqueio = get_us_distance();
+    if (bloqueio >  0 & bloqueio < 100){
+      ande(10, alvo, angulo + 90);
+    }
+    set_torque(torque,torque);
+    if (get_time() % 1000 == 0){
+      printLocation(atual);
+    }
+    get_current_GPS_position(&atual); 
   }
-  puts("fim de andar");
   set_torque(0,0);
 }
 
-
-/* Nao estao sendo utilizados no momento
-void andeX(int alvo, int impulso){
-  Vector3 atual;
-  get_current_GPS_position(&atual);
-  int distancia = friends_locations[alvo].x - atual.x;
-  if (distancia > 0){
-    vire(270);
-    int bloqueio = get_us_distance();
-    while(bloqueio == -1 | bloqueio > 100){
-      set_torque(impulso,impulso);
-      bloqueio = get_us_distance();
-      get_current_GPS_position(&atual);
-      if (friends_locations[alvo].x - atual.x <= 0){
-        set_torque(0,0);
-        return;
-      }
-      get_gyro_angles(&atual);
-      int desvioAngular = quadrado(atual.y - 270);
-      if (desvioAngular > 100){
-        set_torque(0,0);
-        return;
-      }
-    }
-  }
-  if (distancia < 0){
-    vire(90);
-    int bloqueio = get_us_distance();
-    while(bloqueio == -1 | bloqueio > 100){
-      set_torque(impulso,impulso);
-      bloqueio = get_us_distance();
-      get_current_GPS_position(&atual);
-      if (friends_locations[alvo].x - atual.x >= 0){
-        set_torque(0,0);
-        return;
-      }
-      get_gyro_angles(&atual);
-      int desvioAngular = quadrado(atual.y - 90);
-      if (desvioAngular > 100){
-        set_torque(0,0);
-        return;
-      }
-    }
-  }
-  set_torque(0,0);
-  return;
+void printLocation(Vector3 local){
+  puts("(");
+  intToASCII(local.x,0);
+  puts(", ");
+  intToASCII(local.y,0);
+  puts(", ");
+  intToASCII(local.z,0);
+  puts(")\n");
 }
-void andeZ(int alvo, int impulso){
-  Vector3 atual;
-  get_current_GPS_position(&atual);
-  int distancia = friends_locations[alvo].z - atual.z;
-  if (distancia > 0){
-    vire(0);
-    int bloqueio = get_us_distance();
-    while(bloqueio == -1 | bloqueio > 100){
-      set_torque(impulso,impulso);
-      bloqueio = get_us_distance();
-      get_current_GPS_position(&atual);
-      if (friends_locations[alvo].z - atual.z <= 0){
-        set_torque(0,0);
-        return;
-      }
-      get_gyro_angles(&atual);
-      int desvioAngular = quadrado(atual.y - 0);
-      if (desvioAngular > 100){
-        set_torque(0,0);
-        return;
-      }
-    }
-  }
-  if (distancia < 0){
-    vire(180);
-    int bloqueio = get_us_distance();
-    while(bloqueio == -1 | bloqueio > 100){
-      set_torque(impulso,impulso);
-      bloqueio = get_us_distance();
-      get_current_GPS_position(&atual);
-      if (friends_locations[alvo].z - atual.z >= 0){
-        set_torque(0,0);
-        return;
-      }
-      get_gyro_angles(&atual);
-      int desvioAngular = quadrado(atual.y - 90);
-      if (desvioAngular > 100){
-        set_torque(0,0);
-        return;
-      }
-    }
-  }
-  set_torque(0,0);
-  return;
-}
-*/
-
 
 void goToFriend(int alvo){
+  int torque = 15;
   Vector3 uoli, amigo = friends_locations[alvo];
   get_current_GPS_position(&uoli);
   vire(angulo(amigo, uoli));
-
-  set_torque(10, 10);
+  set_torque(torque, torque);
   while (1){
     if (distanciaQuadrada(amigo, uoli) < 1000)
       break;
@@ -342,6 +263,54 @@ int verificarInimigos(){
       return 1;
   }
   return 0;
+}
+
+int temInimigo(Vector3 atual, int angulo, int distancia){
+  /* Se o destino entrar na zona de perigo, retorna 1, 
+  caso o destino seja seguro retorna 0 */
+  int X=atual.x,
+      Y=atual.y,
+      Z=atual.z,
+      aux=distancia*71/100; /*distancia*sqrt(2)/2 = distancia*sen(45)*/
+  switch (angulo)
+  {
+  case 0:
+    Z = Z + distancia;
+    break;
+  case 90:
+    X = X + distancia;
+    break;
+  case 180:
+    Z = Z - distancia;
+    break;
+  case 270:
+    X = X - distancia;
+    break;
+  case 45:
+    Z = Z + aux;
+    X = X + aux;
+    break;
+  case 135:
+    Z = Z - aux;
+    X = X + aux;
+    break;
+  case 225:
+    Z = Z - aux;
+    X = X - aux;
+    break;
+  case 315:
+    Z = Z + aux;
+    X = X - aux;
+    break;
+  }
+  int i;
+  for (i=0;i<numberOfDangLoc;i++){
+    if ((quadrado(X - dangerous_locations[i].x) + 
+        quadrado(Z - dangerous_locations[i].z)) < 3600){
+          return 1;
+        }
+    return 0;
+  }
 }
 
 int angulo(Vector3 alvo, Vector3 atual){
@@ -391,45 +360,65 @@ void contornarInimigo(){
 int main(){
   Vector3 atual;
   get_current_GPS_position(&atual);
-  int indices[sizeof(friends_locations)];
-  int distancias[sizeof(friends_locations)];
-  int alvo, qtdeAmigos = sizeof(friends_locations),
-            qtdeInimigos = sizeof(dangerous_locations);
+  // int indices[sizeof(friends_locations)];
+  // int distancias[sizeof(friends_locations)];
+  int alvo;
   /* Ordenando os amigos por ordem crescente de distancia da origem */
+  // int i;
+  // for (i=0;i<numberOfFriends;i++){
+  //   indices[i] = i;
+  //   distancias[i] = distanciaQuadrada(friends_locations[i],atual);
+  // }
+  // int ini = 0, fim = numberOfFriends - 1, j =1;
+  // i = 0;
+  // while(ini<fim){
+  //   if (distancias[i] > distancias[j]){
+  //     int aux = distancias[i];
+  //     distancias[i] = distancias[j];
+  //     distancias[j] = aux;
+  //     aux = indices[i];
+  //     indices[i] = indices[j];
+  //     indices[j] = aux;
+  //   }
+  //   i++;
+  //   j++;
+  //   if (j > fim){
+  //     i = 0;
+  //     j = 1;
+  //     fim--;
+  //   }
+  // }
+  /* Buscando cada amigo*/
   int i;
-  for (i=0;i<qtdeAmigos;i++){
-    indices[i] = i;
-    distancias[i] = distanciaQuadrada(friends_locations[i],atual);
-  }
-  int ini = 0, fim = qtdeAmigos - 1, j =1;
-  i = 0;
-  while(ini<fim){
-    if (distancias[i] > distancias[j]){
-      int aux = distancias[i];
-      distancias[i] = distancias[j];
-      distancias[j] = aux;
-      aux = indices[i];
-      indices[i] = indices[j];
-      indices[j] = aux;
+  for (i=0;i<numberOfFriends;i++){
+    get_current_GPS_position(&atual);
+    // alvo = indices[i];
+    alvo = i;
+    puts("--------Localizacao atual---------\n");
+    printLocation(atual);
+    puts("------Localizacao do amigo--------\n");
+    printLocation(friends_locations[alvo]);
+    int angulo = getAngulo(alvo);
+    while(distanciaQuadrada(atual,friends_locations[alvo]) > 2500){
+      angulo = getAngulo(alvo);
+      vire(angulo);
+      int obstaculo = get_us_distance();
+      if (obstaculo > 0 & obstaculo < 100){
+        vire(angulo+90);
+        ande(10,alvo,angulo+90);
+      }
+      if (temInimigo(atual,angulo,50) == 1){
+        if (temInimigo(atual,angulo+45,50) == 0){
+          angulo = angulo + 45;
+        }
+        else{
+          angulo = angulo - 45;
+        }
+      }
+      ande(50,alvo,angulo);
     }
-    i++;
-    j++;
-    if (j > fim){
-      i = 0;
-      j = 1;
-      fim--;
-    }
-  }
-  /* Buscando cada amigo, d_min**2 = 2500*/
-  for (i=0;i<qtdeAmigos;i++){
-    alvo = indices[i];
-    while(distanciaQuadrada(friends_locations[alvo],atual) > 2500){
-      int direcao = getAngulo(alvo);
-      vire(direcao);
-      ande(10,alvo,direcao);
-      get_current_GPS_position(&atual);
-    }
-    puts("Amigo encontrado\n");
+    printLocation(atual);
+    puts("amigo encontrado");
   }
   while(1){
   }
