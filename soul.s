@@ -123,16 +123,17 @@ syscall16: # read_ultrasonic_sensor
     lw a0, 4(t0)     #0xFFFF0024
     j int_handler_Return
 
-syscall17:  # set_servo_angles
+syscall17:  # set_servo_angles ids: 1-Base/2-Mid/3-Top
     #Verifica qual o servo a ter o ângulo alterado
-    beqz a0, sys17_Base
     li t0, 1
-    beq a0, t0, sys17_Mid
+    beq a0, t0, sys17_Base
     li t0, 2
+    beq a0, t0, sys17_Mid
+    li t0, 3
     beq a0, t0, sys17_Top
     li a0, -2   #Caso servo ID seja inválido
-    j int_handler_Return
-    #Servo ID 0 - Base (16-116)
+    j int_handler_Return #Retorno caso ID inválido
+    #Servo ID 1 - Base (16-116)
     sys17_Base:
     #Validação do ângulo
     li t0, 116
@@ -143,7 +144,7 @@ syscall17:  # set_servo_angles
     sb a1, 0(t0)
     li a0, 0
     j int_handler_Return
-    #Servo ID 1 - Mid (52-90)
+    #Servo ID 2 - Mid (52-90)
     sys17_Mid:
     #Validação do ângulo
     li t0, 90
@@ -154,7 +155,7 @@ syscall17:  # set_servo_angles
     sb a1, 0(t0)
     li a0, 0
     j int_handler_Return
-    #Servo ID 2 - Top (0-156)
+    #Servo ID 3 - Top (0-156)
     sys17_Top:
     #Validação do ângulo
     li t0, 156

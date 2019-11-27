@@ -18,9 +18,9 @@ set_torque:
   li a7, 18
   ecall
   #Set torque motor 1
-  li a0, 0 #NÃO É NECESSÁRIO SE QUISER PODE TIRAR
+  li a0, 0 
   mv a1, t0
-  li a7, 18 #NÃO É NECESSÁRIO SE QUISER PODE TIRAR
+  li a7, 18
   ecall
   j st_Return
   st_OutOfRange:
@@ -51,6 +51,7 @@ set_engine_torque:
 
 .globl set_head_servo
 set_head_servo:
+  addi a0, a0, 1
   li a7, 17
   ecall
   beqz a0, shs_Return
