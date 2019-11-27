@@ -167,7 +167,7 @@ void vire(int angulo){
   if (angulo >= 360) angulo = angulo % 360;
   Vector3 atual;
   get_gyro_angles(&atual);
-  int aux = angulo - atual.y, torque = 15;
+  int aux = angulo - atual.y, torque = 20;
   if (aux > 0 & aux <= 180){
     set_torque(torque,-torque);
   }
@@ -199,7 +199,7 @@ void parar(){
 void ande(int distancia, Vector3 alvo){
   /* Anda distancia em decimetros em linha reta */
   Vector3 atual, inicio, giroscopio;
-  int torque = 20, angulo, Tinicial;
+  int torque = 40, angulo, Tinicial;
   get_current_GPS_position(&atual);
   get_current_GPS_position(&inicio);
   set_torque(torque,torque);
@@ -207,6 +207,12 @@ void ande(int distancia, Vector3 alvo){
   while(distanciaQuadrada(atual,inicio) < quadrado(distancia)){
     if (distanciaQuadrada(atual, alvo) < 25)
       break;
+    if (get_us_distance() > 0 && get_us_distance() < 600){
+      intToASCII(get_us_distance(), 1);
+      parar();
+      return;
+    }
+
     get_current_GPS_position(&atual);
     if (get_time() - Tinicial > 2000){
       puts("Tempo\n");
@@ -214,7 +220,6 @@ void ande(int distancia, Vector3 alvo){
     }
   }
   parar();
-  set_torque(0,0);
 }
 
 void printLocation(Vector3 local){
@@ -347,8 +352,9 @@ void desviar(int varreduraObstaculo[3], Vector3 alvo){
 int main(){
   Vector3 atual, alvo;
   int angulo, aux;
+  intToASCII(numberOfFriends, 1);
   /* Buscando cada amigo*/
-  for (int i = 0;i<numberOfFriends+1;i++){
+  for (int i = 0;i<=numberOfFriends;i++){
     alvo = closestPosition();
     get_current_GPS_position(&atual);
     // alvo = indices[i];
@@ -369,6 +375,7 @@ int main(){
       ande(2, alvo);
     }
     aux = friendIndex(alvo);
+    intToASCII(aux, 1);
     if (aux >= 0)
       friends_locations[i].y = 0;
     else
