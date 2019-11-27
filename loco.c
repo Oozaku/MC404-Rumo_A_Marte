@@ -8,21 +8,20 @@ João Alberto Moreira Seródio - RA 218548*/
 /*variáveis globais*/
 int numberOfFriends = sizeof(friends_locations)/sizeof(Vector3);
 int numberOfDangLoc = sizeof(dangerous_locations)/sizeof(Vector3);
-int tabelaTan[18] = {0, 87, 176, 268, 363, 466, 577, 700, 839, 1000,
+static int tabelaTan[18] = {0, 87, 176, 268, 363, 466, 577, 700, 839, 1000,
                      1191, 1428, 1732, 2144, 2747, 3732, 5671, 11430};
 
 /*Protótipos de Função*/
 void intToASCII(int numero, int quebraLinha);
-int buscaBinariaTan(int chave);
 int quadrado(int numero);
+int buscaBinariaTan(int chave);
 void wait(unsigned int tempo);
 int distanciaQuadrada(Vector3 alvo, Vector3 atual);
 void vire(int angulo);
-void ande(int distancia, int alvo, int angulo);
-void goToFriend(int alvo);
+void ande(int distancia, int alvo);
 int verificarInimigos();
-int angulo(Vector3 alvo, Vector3 atual);
 void contornarInimigo();
+void desviar(int varreduraObstaculo[5], int alvo);
 void printLocation(Vector3 local);
 
 
@@ -35,7 +34,7 @@ void intToASCII(int numero, int quebraLinha){
   }
   ascii[0] = (char) numero%10 + 48;
   ascii[1] = '\0';
-  if (numero/10 < 1){
+  if (numero/10 == 0){
     puts(ascii);
   } else{
     intToASCII(numero/10, 0);
@@ -45,37 +44,48 @@ void intToASCII(int numero, int quebraLinha){
     puts("\n");
 }
 
-int buscaBinariaTan(int chave){
-  int tam = 17, n = tam/2;
-  while (1){
-    if (tabelaTan[n] == chave){
-      return n;
-    }
-    if (chave > tabelaTan[n]){
-      if (n == tam)
-        return n;
-      if (chave<tabelaTan[n+1]){
-        if ((chave - tabelaTan[n]) > (tabelaTan[n+1] - chave))
-          return n+1;
-        else
-          return n;
-      }
-      n = (tam + n)/2;
-    }
-    else{
-      if (chave>tabelaTan[n-1]){
-        if((chave - tabelaTan[n-1]) > (tabelaTan[n] - chave))
-          return n;
-        else 
-          return n-1;
-      }
-      n = n/2;
-    }
-  }
-}
-
 int quadrado(int numero){
   return numero * numero;
+}
+
+// int buscaBinariaTan(int chave){
+//   int tam = 17, n = tam/2;
+//   while (1){
+//     if (tabelaTan[n] == chave){
+//       return n;
+//     }
+//     if (chave > tabelaTan[n]){
+//       if (n == tam)
+//         return n;
+//       if (chave<tabelaTan[n+1]){
+//         if ((chave - tabelaTan[n]) > (tabelaTan[n+1] - chave))
+//           return n+1;
+//         else
+//           return n;
+//       }
+//       n = (tam + n)/2;
+//     }else{
+//       if (chave>tabelaTan[n-1]){
+//         if((chave - tabelaTan[n-1]) > (tabelaTan[n] - chave))
+//           return n;
+//         else 
+//           return n-1;
+//       }
+//       n = n/2;
+//     }
+//   }
+// }
+
+int buscaLinearTan(int chave){
+  for (int i = 0; i < 17; i++){
+    if (chave >= tabelaTan[i] && chave < tabelaTan[i+1]){
+      if (chave - tabelaTan[i] > tabelaTan[i+1] - chave)
+        return i+1;
+      else
+        return i;
+    }
+  }
+  return 17;
 }
 
 void wait(unsigned int tempo){
@@ -92,31 +102,31 @@ int distanciaQuadrada(Vector3 p1, Vector3 p2){
   return distancia;
 }
 
-int getAngulo(int alvo){
-  Vector3 atual;
+int getAngulo(int amigo){
+  Vector3 alvo = friends_locations[amigo], atual;
   get_current_GPS_position(&atual);
-  int dx = friends_locations[alvo].x - atual.x,
-      dz = friends_locations[alvo].z - atual.z;
-  if((dz != 0) & (dx/dz*10 == 5)){
-    if (dx > 0)return 45;
-    else return 225;
+  int dx = alvo.x - atual.x, dz = alvo.z - atual.z, tan, angulo;
+  if (dz != 0){
+    tan = (dx*1000)/dz;
+    if (tan < 0)
+      tan = tan*(-1);
+    angulo = 5*buscaLinearTan(tan);
   }
-  if ((dz != 0) & (dx/dz*10 == -5)){
-    if (dx < 0) return 315;
-    else return 135;
-  }
-  int modDx = dx, modDz = dz;
-  if (modDx < 0) modDx = - modDx;
-  if (modDz < 0) modDz = - modDz;
-  if (modDx > modDz){
-    if (dx > 0) return 90;
-    else return 270;
-  } 
-  else{
-    if (dz > 0) return 0;
-    else return 180;
+  else
+    angulo = 90;
+  if (dx >= 0){
+    if (dz >= 0)
+      return angulo;
+    else
+      return (180 - angulo);
+  } else {
+    if (dz >= 0)
+      return (360 - angulo);
+    else
+      return (angulo + 180);
   }
 }
+
 
 /*Funções de Movimentação*/
 
@@ -126,11 +136,30 @@ int declive(Vector3 atual){
   else inclinacao = inclinacao + atual.x; 
   if (atual.z > 300) inclinacao = inclinacao + 360 - atual.z;
   else inclinacao = inclinacao + atual.z;
-  if (get_time() % 500 == 0){
-    puts("Declive: ");
-    intToASCII(inclinacao,1);
-  }
+  // if (get_time() % 500 == 0){
+  //   puts("Declive: ");
+  //   intToASCII(inclinacao,1);
+  // }
   return inclinacao; 
+}
+
+int elevacao(){
+  Vector3 giroscopio;
+  get_gyro_angles(&giroscopio);
+  if (giroscopio.x > 5 && giroscopio.x < 60){
+    if (giroscopio.z > 5 && giroscopio.z < 60)
+      return 1;
+    else if (giroscopio.z > 300 && giroscopio.z < 355)
+      return 2;
+    return 3;
+  }else if (giroscopio.x > 300 && giroscopio.x < 355){
+    if (giroscopio.z > 5 && giroscopio.z < 60)
+      return -1;
+    else if (giroscopio.z > 300 && giroscopio.z < 355)
+      return -2;
+    return -3;
+  }
+  return 0;
 }
 
 void vire(int angulo){  
@@ -159,12 +188,12 @@ void vire(int angulo){
 }
 
 void parar(){
-  set_torque(-1, -1);
-  wait(1000);
+  set_torque(-8, -8);
+  wait(800);
   set_torque(0, 0);
   wait(500);
   set_torque(-1, -1);
-  wait(1000);
+  wait(600);
   set_torque(0,0);
 }
 
@@ -187,37 +216,24 @@ void desvio(int angulo, int tempo){
   }
 }  
 
-void ande(int distancia, int alvo, int angulo){
+void ande(int distancia, int alvo){
   /* Anda distancia em decimetros em linha reta */
-  Vector3 atual, inicio;
-  int torque = 20;
+  Vector3 atual, inicio, giroscopio;
+  int torque = 20, angulo, Tinicial;
   get_current_GPS_position(&atual);
   get_current_GPS_position(&inicio);
   set_torque(torque,torque);
+  Tinicial = get_time();
   while(distanciaQuadrada(atual,inicio) < quadrado(distancia)){
-    if (distanciaQuadrada(friends_locations[alvo],atual) <= 2500) break;
-    Vector3 giroscopio;
-    get_gyro_angles(&giroscopio);
-    int dAngulo = giroscopio.y - angulo;
-    if (dAngulo < 0) dAngulo = - dAngulo;
-    if (dAngulo > 90) break;
-    if (declive(giroscopio) > 30){        
-      /* Ve se o Uoli esta tentando escalar morro, se sim, faz desvio */    
-      angulo = getAngulo(alvo);
-      puts("...\nDesviando...\n...\n");
-      desvio(angulo-90,10000);
+    if (distanciaQuadrada(atual, friends_locations[alvo]) < 25)
+      break;
+    get_current_GPS_position(&atual);
+    if (get_time() - Tinicial > 2000){
+      puts("Tempo\n");
+      break;
     }
-    angulo = getAngulo(alvo);
-    int bloqueio = get_us_distance();
-    if (bloqueio >  0 & bloqueio < 100){
-      ande(10, alvo, angulo + 90);
-    }
-    set_torque(torque,torque);
-    if (get_time() % 1000 == 0){
-      printLocation(atual);
-    }
-    get_current_GPS_position(&atual); 
   }
+  parar();
   set_torque(0,0);
 }
 
@@ -231,26 +247,6 @@ void printLocation(Vector3 local){
   puts(")\n");
 }
 
-void goToFriend(int alvo){
-  int torque = 15;
-  Vector3 uoli, amigo = friends_locations[alvo];
-  get_current_GPS_position(&uoli);
-  vire(angulo(amigo, uoli));
-  set_torque(torque, torque);
-  while (1){
-    if (distanciaQuadrada(amigo, uoli) < 1000)
-      break;
-    if (verificarInimigos()){
-      parar();
-      contornarInimigo();
-    }
-    // if (obstaculo()){
-    //   parar();
-    //   desviarObstaculo();
-    // }
-  }
-  parar();
-}
 
 
 
@@ -261,6 +257,33 @@ int verificarInimigos(){
     get_current_GPS_position(&atual);
     if (distanciaQuadrada(dangerous_locations[i], atual) < 225)
       return 1;
+  }
+  return 0;
+}
+
+int verificarObstaculos(int alvo){
+  int varreduraObstaculo[5] = {0,0,0,0,0}; //[dir, dir45, frente, esq45, esq]
+  for(int i; i < 27; i++){
+    set_head_servo(2, 0 + i*6);
+    wait(50);
+    if (get_us_distance() > 0 && get_us_distance() < 600){
+      if (i*3 < 45)
+        varreduraObstaculo[0] = 1;
+      else if (i*3 < 70)
+        varreduraObstaculo[1] = 1;
+      else if (i*3 < 86)
+        varreduraObstaculo[2] = 1;
+      else if (i*3 < 110)
+        varreduraObstaculo[3] = 1;
+      else
+        varreduraObstaculo[4] = 1;
+    }
+  }
+  set_head_servo(2, 78);
+  if (varreduraObstaculo[2]){
+    puts("Desviar\n");
+    desviar(varreduraObstaculo, alvo);
+    return 1;
   }
   return 0;
 }
@@ -313,37 +336,6 @@ int temInimigo(Vector3 atual, int angulo, int distancia){
   }
 }
 
-int angulo(Vector3 alvo, Vector3 atual){
-  int dx = alvo.x - atual.x, dz = alvo.z - atual.z, tan, angulo;
-  puts("dx");
-  intToASCII(dx, 1);
-  puts("dz");
-  intToASCII(dz, 1);
-  if (dz != 0){
-    tan = (dx*1000)/dz;
-    if (tan < 0)
-      tan = tan*(-1);
-    angulo = 5*buscaBinariaTan(tan);
-  }
-  else
-    angulo = 90;
-  puts("Angulo Tabela");
-  intToASCII(angulo, 1);
-  if (dx >= 0){
-    if (dz >= 0)
-      return angulo;
-    else
-      return (angulo + 90);
-  } else {
-    if (dz >= 0)
-      return (angulo + 270);
-    else
-      return (angulo + 180);
-  }
-    
-
-}
-
 /*Funções de tratamento situacional*/
 void contornarInimigo(){
   Vector3 atual, inimigo;
@@ -356,40 +348,42 @@ void contornarInimigo(){
   }
 }
 
+void desviar(int varreduraObstaculo[5], int alvo){
+  Vector3 giroscopio;
+  get_gyro_angles(&giroscopio);
+  int anguloY = giroscopio.y;
+  if (!varreduraObstaculo[1]){
+    	vire(anguloY + 45);
+      ande(4,alvo);
+  }
+  else if (!varreduraObstaculo[3]){
+      vire(anguloY - 45);
+      ande(4, alvo);
+  }
+  else if (!varreduraObstaculo[0]){
+    vire(anguloY + 90);
+    ande(4, alvo);
+    vire(anguloY);
+    verificarObstaculos(alvo);
+    ande(4, alvo);
+  }
+  else if (!varreduraObstaculo[4]){
+    vire(anguloY - 90);
+    ande(4, alvo);
+    vire(anguloY);
+    verificarObstaculos(alvo);
+    ande(4, alvo);
+  }
+}
+
 /*Main*/
 int main(){
   Vector3 atual;
+  get_gyro_angles(&atual);
+  vire(atual.y + 45);
   get_current_GPS_position(&atual);
-  // int indices[sizeof(friends_locations)];
-  // int distancias[sizeof(friends_locations)];
-  int alvo;
-  /* Ordenando os amigos por ordem crescente de distancia da origem */
-  // int i;
-  // for (i=0;i<numberOfFriends;i++){
-  //   indices[i] = i;
-  //   distancias[i] = distanciaQuadrada(friends_locations[i],atual);
-  // }
-  // int ini = 0, fim = numberOfFriends - 1, j =1;
-  // i = 0;
-  // while(ini<fim){
-  //   if (distancias[i] > distancias[j]){
-  //     int aux = distancias[i];
-  //     distancias[i] = distancias[j];
-  //     distancias[j] = aux;
-  //     aux = indices[i];
-  //     indices[i] = indices[j];
-  //     indices[j] = aux;
-  //   }
-  //   i++;
-  //   j++;
-  //   if (j > fim){
-  //     i = 0;
-  //     j = 1;
-  //     fim--;
-  //   }
-  // }
   /* Buscando cada amigo*/
-  int i;
+  int i, alvo, angulo;
   for (i=0;i<numberOfFriends;i++){
     get_current_GPS_position(&atual);
     // alvo = indices[i];
@@ -398,42 +392,23 @@ int main(){
     printLocation(atual);
     puts("------Localizacao do amigo--------\n");
     printLocation(friends_locations[alvo]);
-    int angulo = getAngulo(alvo);
-    while(distanciaQuadrada(atual,friends_locations[alvo]) > 2500){
+    while(distanciaQuadrada(atual, friends_locations[alvo]) > 25){
+      intToASCII(get_us_distance(), 1);
+      get_current_GPS_position(&atual);
       angulo = getAngulo(alvo);
       vire(angulo);
-      int obstaculo = get_us_distance();
-      if (obstaculo > 0 & obstaculo < 100){
-        vire(angulo+90);
-        ande(10,alvo,angulo+90);
+      if (verificarObstaculos(alvo)){
+        continue;
       }
-      if (temInimigo(atual,angulo,50) == 1){
-        if (temInimigo(atual,angulo+45,50) == 0){
-          angulo = angulo + 45;
-        }
-        else{
-          angulo = angulo - 45;
-        }
-      }
-      ande(50,alvo,angulo);
+      ande(2, alvo);
     }
+    puts("--------Localizacao atual---------\n");
     printLocation(atual);
-    puts("amigo encontrado");
+    puts("------Localizacao do amigo--------\n");
+    printLocation(friends_locations[alvo]);
+    puts("Amigo encontrado!!!\n");
   }
   while(1){
   }
   return 0;
 }
-
-// /*Main*/
-// int main(){
-//   Vector3 atual;
-//   get_current_GPS_position(&atual);
-//   intToASCII(atual.x, 1);
-//   intToASCII(atual.y, 1);
-//   intToASCII(atual.z, 1);
-//   goToFriend(0);
-//   while(1){
-//   }
-//   return 0;
-// }
