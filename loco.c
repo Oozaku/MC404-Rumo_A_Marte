@@ -26,7 +26,7 @@ void parar();
 void ande(int distancia, Vector3 alvo);
 int verificarObstaculos(Vector3 alvo);
 int verificarInimigos();
-void contornarInimigo();
+void contornarInimigo(Vector3 anterior, Vector3 atual, Vector3 alvo);
 void desviar(int varreduraObstaculo[5], Vector3 alvo);
 void printLocation(Vector3 local);
 
@@ -175,7 +175,7 @@ int getAngulo(Vector3 alvo){
 //   return 0;
 // }
 
-//Função que vira o Uoli para o que giroscópio.y = aungulo
+//Função que vira o Uoli para o que giroscópio.y = angulo
 void vire(int angulo){  
   /* Vira para angulo-graus absoluto do giroscopio */
   if (angulo < 0) angulo = angulo + 360;
@@ -333,13 +333,16 @@ int temInimigo(Vector3 atual, int angulo, int distancia){
   }
 }
 
-/*Funções de tratamento situacional*/
-void contornarInimigo(){
-  Vector3 atual, inimigo;
+/* Ele ve se o uoli esta se aproximando demais de um perigo, se sim ele faz um desvio */
+void contornarInimigo(Vector3 anterior, Vector3 atual, Vector3 alvo){
   for(int i = 0; i < numberOfDangLoc; i++){
-    get_current_GPS_position(&atual);
-    if (distanciaQuadrada(dangerous_locations[i], atual) < 225){
-      inimigo = dangerous_locations[i];
+    int distancia_antes = distanciaQuadrada(anterior,dangerous_locations[i]);
+    int distancia_agora = distanciaQuadrada(atual,dangerous_locations[i]);
+    if (distancia_antes < distancia_agora && distancia_agora < 100){
+      Vector3 giroscopio;
+      get_gyro_angles(&giroscopio);
+      vire(giroscopio.y+90);
+      ande(4,alvo);
       break;
     }
   }
@@ -380,15 +383,17 @@ void desviar(int varreduraObstaculo[3], Vector3 alvo){
   }
 }
 
+
 /*Main*/
 int main(){
-  Vector3 atual, alvo;
+  Vector3 atual, alvo, anterior;
   int angulo, aux;
   intToASCII(numberOfFriends, 1);
   /* Buscando cada amigo*/
   for (int i = 0; i<=numberOfFriends; i++){
     alvo = closestPosition();
     get_current_GPS_position(&atual);
+    get_current_GPS_position(&anterior);
     // alvo = indices[i];
     puts("--------Localizacao atual---------\n");
     printLocation(atual);
@@ -397,7 +402,11 @@ int main(){
     angulo = getAngulo(alvo);
     vire(angulo);
     while(distanciaQuadrada(atual, alvo) > 25){
+      anterior.x = atual.x;
+      anterior.y = atual.y;
+      anterior.z = atual.z;
       get_current_GPS_position(&atual);
+      contornarInimigo(anterior, atual, alvo);
       angulo = getAngulo(alvo);
       vire(angulo);
       if (verificarObstaculos(alvo)){
